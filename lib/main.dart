@@ -2,6 +2,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'Admin/all_user_screen.dart';
 import 'Views/calenderScreen.dart';
 import 'Views/loginscreen.dart';
 
@@ -15,7 +16,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      home: CalendarScreen(),
+      home: AllUserScreen(),
       debugShowCheckedModeBanner: false,
     );
   }

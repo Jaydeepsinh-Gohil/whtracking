@@ -1,0 +1,99 @@
+import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
+class UserDetailScreen extends StatelessWidget {
+  final String userId;
+
+  UserDetailScreen({required this.userId});
+
+  @override
+  Widget build(BuildContext context) {
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text('User Details'),
+          bottom: TabBar(
+            tabs: [
+              Tab(icon: Icon(Icons.call), text: 'Call'),
+              Tab(icon: Icon(Icons.sms), text: 'SMS'),
+            ],
+          ),
+        ),
+        body: TabBarView(
+          children: [
+            CallSection(userId: userId), // Call Tab
+            SmsSection(userId: userId),  // SMS Tab
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+
+class CallSection extends StatelessWidget {
+  final String userId;
+
+  CallSection({required this.userId});
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('calls')
+          .where('userId', isEqualTo: userId)
+          .snapshots(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Center(child: CircularProgressIndicator());
+        }
+
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          return Center(child: Text('No call records found'));
+        }
+
+        var calls = snapshot.data!.docs;
+
+        return ListView.builder(
+          itemCount: calls.length,
+          itemBuilder: (context, index) {
+            var call = calls[index];
+            String callType = call['callType']; // incoming, outgoing, missed
+            String phoneNumber = call['phoneNumber'];
+
+            return Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Container(
+                decoration: BoxDecoration(
+                  border: Border.all( color: Colors.grey),
+                ),
+                child: ListTile(
+                  leading: Icon(Icons.phone, color: callType.toUpperCase() == "INCOMING CALL" ?
+                  Colors.green : callType.toUpperCase() == "OUTGOING CALL"? Colors.blue : Colors.green),
+                  title: Text(callType.toUpperCase()),
+                  subtitle: Text(phoneNumber),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+}
+
+
+class SmsSection extends StatelessWidget {
+  final String userId;
+
+  SmsSection({required this.userId});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Text('SMS Section (Coming Soon)', style: TextStyle(fontSize: 18)),
+    );
+  }
+}
+
