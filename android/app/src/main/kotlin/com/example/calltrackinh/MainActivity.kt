@@ -3,6 +3,7 @@ package com.example.calltrackinh
 import io.flutter.embedding.android.FlutterActivity
 import android.content.Intent
 import android.Manifest
+import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.os.Build
 import android.widget.Toast
@@ -37,14 +38,29 @@ class MainActivity: FlutterActivity(){
                         result.success(false)
                     }
                 }
-                "startSilentService" -> {
-                    val serviceIntent = Intent(this, SilentService::class.java)
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                        startForegroundService(serviceIntent)
+                "saveUserData" -> {
+                    val userId = call.argument<String>("userId")
+                    val username = call.argument<String>("username")
+
+                    if (userId != null && username != null) {
+                        saveUserDataToNative(userId, username)
+                        result.success("User data saved successfully in native.")
                     } else {
-                        startService(serviceIntent)
+                        result.error("INVALID_DATA", "Missing userId or username", null)
                     }
-                    result.success(null)
+                }
+                "startSilentService" -> {
+                    try {
+                        val serviceIntent = Intent(this, SilentService::class.java)
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                            startForegroundService(serviceIntent)
+                        } else {
+                            startService(serviceIntent)
+                        }
+                        result.success("Service started successfully")
+                    } catch (e: Exception) {
+                        result.error("SERVICE_ERROR", "Failed to start the silent service: ${e.message}", null)
+                    }
                 }
                 else -> result.notImplemented()
             }
@@ -93,7 +109,7 @@ class MainActivity: FlutterActivity(){
             }
 
             if (allPermissionsGranted) {
-                // Permissions granted, start the service
+//                 Permissions granted, start the service
                 val serviceIntent = Intent(this, SilentService::class.java)
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                     startForegroundService(serviceIntent)
@@ -102,9 +118,17 @@ class MainActivity: FlutterActivity(){
                 }
             } else {
                 // If any permission is denied, show a toast message
-                Toast.makeText(this, "Permissions are not granted. Service cannot start.", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Permissions are not granted.", Toast.LENGTH_LONG).show()
             }
         }
+    }
+
+    private fun saveUserDataToNative(userId: String, username: String) {
+        val sharedPreferences: SharedPreferences = getSharedPreferences("FlutterSharedPrefs", MODE_PRIVATE)
+        val editor = sharedPreferences.edit()
+        editor.putString("userId", userId)
+        editor.putString("username", username)
+        editor.apply()
     }
 
     override fun onResume() {
