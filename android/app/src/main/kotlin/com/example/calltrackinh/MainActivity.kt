@@ -21,8 +21,8 @@ class MainActivity: FlutterActivity(){
         Manifest.permission.READ_PHONE_STATE,
         Manifest.permission.READ_CALL_LOG,
         Manifest.permission.RECEIVE_SMS,
-        Manifest.permission.READ_CALL_LOG
-    )
+        Manifest.permission.READ_SMS,
+        )
 
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {

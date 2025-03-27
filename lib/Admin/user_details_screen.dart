@@ -91,9 +91,55 @@ class SmsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Text('SMS Section (Coming Soon)', style: TextStyle(fontSize: 18)),
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('sms')
+          .where('userId', isEqualTo: userId)
+          .snapshots(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Center(child: CircularProgressIndicator());
+        }
+
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          return Center(child: Text('No call records found'));
+        }
+
+        var smsS = snapshot.data!.docs;
+
+        return ListView.builder(
+          itemCount: smsS.length,
+          itemBuilder: (context, index) {
+            var sms = smsS[index];
+            String smsType = sms['type']; // incoming, outgoing, missed
+            String smsTypeString = sms['smsType']; // incoming, outgoing, missed
+            String phoneNumber = sms['phoneNumber'];
+            String messageContent = sms['message'];
+
+            return Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Container(
+                decoration: BoxDecoration(
+                  border: Border.all( color: Colors.grey),
+                ),
+                child: ListTile(
+                  leading: Icon(
+                    Icons.sms,
+                    color: smsType == '2' ? Colors.blue : Colors.green, // Outgoing: Blue, Incoming: Green
+                  ),
+                  title: Text(
+                    smsTypeString.toUpperCase(),
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  subtitle: Text(messageContent), // Display SMS content
+                ),
+              ),
+            );
+          },
+        );
+      },
     );
+
   }
 }
 
