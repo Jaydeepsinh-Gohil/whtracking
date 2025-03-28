@@ -1,8 +1,11 @@
+import 'dart:io';
+
 import 'package:calltrackinh/Views/calenderScreen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginScreen extends StatefulWidget {
   @override
@@ -22,6 +25,7 @@ class _LoginScreenState extends State<LoginScreen> {
     String name = _nameController.text.trim();
    try {
      if (name.isNotEmpty) {
+       FocusManager.instance.primaryFocus?.unfocus();
        var existingUser = await _firestore
            .collection('users')
            .where('username', isEqualTo: name)
@@ -45,10 +49,13 @@ class _LoginScreenState extends State<LoginScreen> {
            'created_At': DateTime.now().millisecondsSinceEpoch,
            'updated_At': DateTime.now().millisecondsSinceEpoch},);
        await passUserDataToNative(userId,name);
+       await saveUserData(userId,name);
+       await stopService();
+       await startSilentService();
+
        setState(() {
          loading = false;
        });
-
      }else{
        ScaffoldMessenger.of(context).showSnackBar(
          SnackBar(content: Text('Please enter your name')),
@@ -86,6 +93,12 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  // Save user ID and name
+  Future<void>  saveUserData(String userId, String name) async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString('userId', userId);
+    await prefs.setString('userName', name);
+  }
 
   Future<void> startSilentService() async {
     const platform = MethodChannel('com.example.app/service');
@@ -94,11 +107,25 @@ class _LoginScreenState extends State<LoginScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('${result}')),
       );
+      // exit(0);
     } on PlatformException catch (e) {
       // Handle the error
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error: ${e.code}, Message: ${e.message}')),
       );
+    }
+  }
+
+
+  Future<void> stopService() async {
+    const platform = MethodChannel('com.example.app/service');
+    try {
+      await platform.invokeMethod('stopService');
+    } on PlatformException catch (e) {
+      // Handle the error
+      // ScaffoldMessenger.of(context).showSnackBar(
+      //   SnackBar(content: Text('Error: ${e.code}, Message: ${e.message}')),
+      // );
     }
   }
   @override

@@ -1,4 +1,4 @@
-package com.example.calltrackinh
+package com.example.calltrackinh_admin
 
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -18,6 +18,8 @@ class SmsReceiver : BroadcastReceiver() {
     private lateinit var sharedPreferences: SharedPreferences
 
     override fun onReceive(context: Context, intent: Intent) {
+        Log.d("onReceive", "onReceive SMS: ----------------------------------")
+
         if (intent.action == "android.provider.Telephony.SMS_RECEIVED") {
             trackIncomingSms(intent,context)
         }

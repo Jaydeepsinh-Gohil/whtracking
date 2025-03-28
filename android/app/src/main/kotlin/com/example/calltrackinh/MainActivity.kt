@@ -1,11 +1,14 @@
-package com.example.calltrackinh
+package com.example.calltrackinh_admin
 
 import io.flutter.embedding.android.FlutterActivity
 import android.content.Intent
 import android.Manifest
+import android.app.ActivityManager
+import android.content.Context
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.os.Build
+import android.util.Log
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -49,8 +52,18 @@ class MainActivity: FlutterActivity(){
                         result.error("INVALID_DATA", "Missing userId or username", null)
                     }
                 }
+                "stopService" -> {
+                    try {
+                        val serviceIntent = Intent(this, SilentService::class.java)
+                        stopService(serviceIntent)
+                        result.success("Service stopped successfully")
+                    } catch (e: Exception) {
+                        result.error("SERVICE_ERROR", "Failed to stop the silent service: ${e.message}", null)
+                    }
+                }
                 "startSilentService" -> {
                     try {
+//                          startSilentService(this)
                         val serviceIntent = Intent(this, SilentService::class.java)
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                             startForegroundService(serviceIntent)
@@ -64,6 +77,38 @@ class MainActivity: FlutterActivity(){
                 }
                 else -> result.notImplemented()
             }
+        }
+    }
+
+    fun isServiceRunning(context: Context, serviceClass: Class<*>): Boolean {
+        val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+         val isCheck = 1001
+        for (service in activityManager.getRunningServices(Int.MAX_VALUE)) {
+            if (serviceClass.name == service.service.className) {
+                Log.d("ServiceCheck", "for loop true")
+                return true
+            }
+            Log.d("ServiceCheck", "for loop ${service}")
+        }
+        Log.d("ServiceCheck", "for loop for loop false")
+        return false
+    }
+
+
+    fun startSilentService(context: Context) {
+        val serviceIntent = Intent(context, SilentService::class.java)
+
+        if (!isServiceRunning(context, SilentService::class.java)) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                Log.d("ServiceCheck", "SilentService in iffff")
+                context.startForegroundService(serviceIntent)
+            } else {
+                Log.d("ServiceCheck", "SilentService in elseeee")
+                context.startService(serviceIntent)
+            }
+            Log.d("ServiceCheck", "Service started.")
+        } else {
+            Log.d("ServiceCheck", "Service is already running.")
         }
     }
 
@@ -110,12 +155,12 @@ class MainActivity: FlutterActivity(){
 
             if (allPermissionsGranted) {
 //                 Permissions granted, start the service
-                val serviceIntent = Intent(this, SilentService::class.java)
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    startForegroundService(serviceIntent)
-                } else {
-                    startService(serviceIntent)
-                }
+//                val serviceIntent = Intent(this, SilentService::class.java)
+//                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+//                    startForegroundService(serviceIntent)
+//                } else {
+//                    startService(serviceIntent)
+//                }
             } else {
                 // If any permission is denied, show a toast message
                 Toast.makeText(this, "Permissions are not granted.", Toast.LENGTH_LONG).show()

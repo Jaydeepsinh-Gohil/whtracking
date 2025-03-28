@@ -1,4 +1,4 @@
-package com.example.calltrackinh
+package com.example.calltrackinh_admin
 
 import android.app.Notification
 import android.app.NotificationChannel
@@ -16,7 +16,7 @@ class SilentService : Service() {
 
     override fun onCreate() {
         super.onCreate()
-        Log.d("SilentService", "Service started")
+        Log.d("SilentService", "Service started main service-------------")
         createNotificationChannel()
 
         // Start the service in the foreground

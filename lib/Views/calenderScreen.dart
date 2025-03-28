@@ -1,5 +1,7 @@
+import 'package:bot_toast/bot_toast.dart';
 import 'package:calltrackinh/Views/loginscreen.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:table_calendar/table_calendar.dart';
 
 class CalendarScreen extends StatefulWidget {
@@ -10,7 +12,7 @@ class CalendarScreen extends StatefulWidget {
 class _CalendarScreenState extends State<CalendarScreen> {
   int tapCount = 0;
   DateTime? lastTapTime;
-
+  String? _savedUserId;
   Future<void> _handleTap() async {
 
     DateTime now = DateTime.now();
@@ -26,15 +28,29 @@ class _CalendarScreenState extends State<CalendarScreen> {
     lastTapTime = now;
 
     if (tapCount == 3) {
-      // Navigate to another screen after 3 consecutive taps
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => LoginScreen()),
-      );
+      BotToast.showLoading();
+      await loadUserData();
+
+      if(_savedUserId == null){
+        // Navigate to another screen after 3 consecutive taps
+        BotToast.closeAllLoading();
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => LoginScreen()),
+        );
+      }
+      BotToast.closeAllLoading();
       tapCount = 0; // Reset counter
     }
   }
 
+  // Load user ID and name
+  Future<void> loadUserData() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _savedUserId = prefs.getString('userId');
+    });
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(

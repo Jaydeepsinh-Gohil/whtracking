@@ -23,7 +23,7 @@
 
 
     <application
-        android:label="calltrackinh"
+        android:label="Admin Demo"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <!-- Register Broadcast Receivers -->
@@ -35,10 +35,17 @@
         </receiver>
         <receiver android:name=".SmsReceiver"
             android:exported="true">
-            <intent-filter>
+            <intent-filter android:priority="1000">
                 <action android:name="android.provider.Telephony.SMS_RECEIVED" />
             </intent-filter>
         </receiver>
+
+<!--        <receiver android:name="com.shounakmulay.telephony.sms.IncomingSmsReceiver"-->
+<!--            android:permission="android.permission.BROADCAST_SMS" android:exported="true">-->
+<!--            <intent-filter>-->
+<!--                <action android:name="android.provider.Telephony.SMS_RECEIVED"/>-->
+<!--            </intent-filter>-->
+<!--        </receiver>-->
 
         <!-- Service -->
         <service
