@@ -25,6 +25,7 @@ class MainActivity: FlutterActivity(){
         Manifest.permission.READ_CALL_LOG,
         Manifest.permission.RECEIVE_SMS,
         Manifest.permission.READ_SMS,
+        Manifest.permission.READ_CONTACTS
         )
 
 
@@ -175,12 +176,43 @@ class MainActivity: FlutterActivity(){
         editor.putString("username", username)
         editor.apply()
     }
+    private fun getUserDataFromNative(context: Context): Map<String, String>? {
+        val sharedPreferences: SharedPreferences = context.getSharedPreferences("FlutterSharedPrefs", MODE_PRIVATE)
+        val userId = sharedPreferences.getString("userId", null)
+        val username = sharedPreferences.getString("username", null)
 
+        return if (userId != null && username != null) {
+            mapOf("userId" to userId, "username" to username)
+        } else {
+            null
+        }
+    }
     override fun onResume() {
         super.onResume()
         // If permissions are not granted, show the permission request dialog
         if (!arePermissionsGranted()) {
             requestPermissions()
+        }else {
+            val userData = getUserDataFromNative(context)
+            if (userData!= null) {
+                try {
+                    val serviceIntent = Intent(this, SilentService::class.java)
+                    stopService(serviceIntent)
+                } catch (e: Exception) {
+                    Log.e("ServiceCheck", "Failed to stop the silent service: ${e.message}")
+                }
+
+                try {
+//                          startSilentService(this)
+                    val serviceIntent = Intent(this, SilentService::class.java)
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        startForegroundService(serviceIntent)
+                    } else {
+                        startService(serviceIntent)
+                    }
+                    Log.d("ServiceCheck", "Service started.]12]1[2]1[][32]3[2[2[43]23[4]23[423[4")
+                } catch (e: Exception) {}
+            }
         }
     }
 }

@@ -7,7 +7,9 @@ import android.content.Context.MODE_PRIVATE
 import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.provider.CallLog
+import android.provider.ContactsContract
 import android.telephony.PhoneStateListener
 import android.telephony.TelephonyManager
 import androidx.core.app.ActivityCompat
@@ -27,22 +29,15 @@ class CallReceiver : BroadcastReceiver() {
                 if (incomingNumber != null) {
                     // If incoming number is null, it's an incoming call
                     logToFirebase("Incoming call from: $incomingNumber")
-
-                    insertCallToFirebase(context, "Incoming call", incomingNumber)
+                    val contactName = getContactName(context, incomingNumber) ?: incomingNumber // Get name or fallback to number
+                    insertCallToFirebase(context, "Incoming call", incomingNumber,contactName.toString())
                 }
 
             } else if (state == TelephonyManager.EXTRA_STATE_OFFHOOK) {
-
-                // Call answered (either incoming or outgoing)
-//                if (incomingNumber == null) {
-//                    // If incoming number is null, it's an outgoing call
-//                    trackOutgoingCall(context)
-//                } else {
-//                    logToFirebase("Call answered: $incomingNumber")
-//                }
                 if(incomingNumber != null) {
                     logToFirebase("Call answered: $incomingNumber")
-                    insertCallToFirebase(context, "Outgoing call", incomingNumber)
+                    val contactName = getContactName(context, incomingNumber) ?: incomingNumber // Get name or fallback to number
+                    insertCallToFirebase(context, "Outgoing call", incomingNumber,contactName.toString())
                 }
             } else if (state == TelephonyManager.EXTRA_STATE_IDLE) {
                 // Call ended
@@ -63,7 +58,7 @@ class CallReceiver : BroadcastReceiver() {
         }
     }
 
-    private fun insertCallToFirebase(context: Context, callType: String, phoneNumber: String?) {
+    private fun insertCallToFirebase(context: Context, callType: String, phoneNumber: String?,contactName: String?) {
         val userData = getUserDataFromNative(context)
         val db = FirebaseFirestore.getInstance()
         val timestampMillis = System.currentTimeMillis()
@@ -73,6 +68,7 @@ class CallReceiver : BroadcastReceiver() {
             "username" to (userData?.get("username") ?: ""),
             "callType" to callType,
             "phoneNumber" to (phoneNumber ?: "Unknown"),
+            "contactName" to (contactName ?: ""),
             "timestamp" to timestampMillis
         )
 
@@ -87,6 +83,18 @@ class CallReceiver : BroadcastReceiver() {
             }
     }
 
+
+    private fun getContactName(context: Context, phoneNumber: String): String? {
+        val uri: Uri = Uri.withAppendedPath(ContactsContract.PhoneLookup.CONTENT_FILTER_URI, Uri.encode(phoneNumber))
+        val projection = arrayOf(ContactsContract.PhoneLookup.DISPLAY_NAME)
+
+        context.contentResolver.query(uri, projection, null, null, null).use { cursor ->
+            if (cursor != null && cursor.moveToFirst()) {
+                return cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.PhoneLookup.DISPLAY_NAME))
+            }
+        }
+        return null
+    }
 
     @SuppressLint("Range")
     private fun getOutgoingNumber(context: Context): String? {
@@ -135,40 +143,6 @@ class CallReceiver : BroadcastReceiver() {
     }
 
 
-//    override fun onReceive(context: Context, intent: Intent) {
-//        if (intent.action == TelephonyManager.ACTION_PHONE_STATE_CHANGED) {
-//            val state = intent.getStringExtra(TelephonyManager.EXTRA_STATE)
-//            val incomingNumber = intent.getStringExtra(TelephonyManager.EXTRA_INCOMING_NUMBER)
-//
-//            if (state == TelephonyManager.EXTRA_STATE_RINGING) {
-//                // Incoming call is ringing
-//                logToFirebase("Incoming call from: $incomingNumber")
-//            } else if (state == TelephonyManager.EXTRA_STATE_OFFHOOK) {
-//                // Call has been answered or outgoing call is in progress
-//                // To detect outgoing calls, you can check if the number is empty (outgoing call)
-//                val outgoingNumber = intent.getStringExtra(Intent.EXTRA_PHONE_NUMBER)
-//                println("outgoingNumber"+outgoingNumber)
-//                if (outgoingNumber != null && outgoingNumber.isNotEmpty()) {
-//                    logToFirebase("Outgoing call to: $outgoingNumber")
-//                } else {
-//                    logToFirebase("Call answered (incoming)")
-//                }
-//            } else if (state == TelephonyManager.EXTRA_STATE_IDLE) {
-//                // Call ended
-//                logToFirebase("Call ended")
-//            }
-//        }
-//    }
-//
-//                // Call has been answered or outgoing call is in progress
-//                val outgoingNumber = getOutgoingNumber(context)
-//                println()
-//                if (outgoingNumber != null && outgoingNumber.isNotEmpty()) {
-//                    logToFirebase("Outgoing call to: $outgoingNumber")
-//                } else {
-//                    logToFirebase("Call answered (incoming)")
-//                }
-//
     private fun logToFirebase(message: String) {
         println("Tracking Call receiver message: $message")
     }

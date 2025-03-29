@@ -9,6 +9,7 @@ import android.database.ContentObserver
 import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
+import android.provider.ContactsContract
 import android.telephony.SmsMessage
 import android.util.Log
 import com.google.firebase.firestore.FirebaseFirestore
@@ -46,25 +47,14 @@ class SmsReceiver : BroadcastReceiver() {
 
             // Process the complete messages
             for ((sender, completeMessage) in messageMap) {
-                insertSmsToFirebase(context, "Incoming", completeMessage.toString(), "1", sender)
+                val contactName = getContactName(context, sender) ?: sender
+                insertSmsToFirebase(context, "Incoming", completeMessage.toString(), "1", sender, contactName.toString())
                 logToFirebase("Incoming SMS from $sender: $completeMessage")
             }
         }
     }
-//    private fun trackIncomingSms(intent: Intent,context: Context) {
-//        val bundle: Bundle? = intent.extras
-//        if (bundle != null) {
-//            val pdus = bundle["pdus"] as Array<*>
-//            val messages = pdus.map { SmsMessage.createFromPdu(it as ByteArray) }
-//
-//            for (message in messages) {
-//                val sender = message.originatingAddress
-//                val content = message.messageBody
-//                insertSmsToFirebase(context,"Incoming",content.toString(),"1",sender)
-//                logToFirebase("Incoming SMS from $sender: $content")
-//            }
-//        }
-//    }
+
+
 
     fun startOutgoingSmsTracking(context: Context) {
         val handler = Handler()
@@ -98,8 +88,9 @@ class SmsReceiver : BroadcastReceiver() {
                     sharedPreferences.edit().putLong("lastSentSmsId", smsId).apply()
 
                     val recipient = it.getString(it.getColumnIndexOrThrow("address"))
+                    val contactName = getContactName(context, recipient) ?: recipient // Get contact name or fallback to number
                     val message = it.getString(it.getColumnIndexOrThrow("body"))
-                    insertSmsToFirebase(context,"Outgoing",message.toString(),"2",recipient)
+                    insertSmsToFirebase(context,"Outgoing",message.toString(),"2",recipient,contactName.toString())
                     logToFirebase("Outgoing SMS to $recipient: $message")
                 } else {
 
@@ -115,7 +106,20 @@ class SmsReceiver : BroadcastReceiver() {
     }
 }
 
-private fun insertSmsToFirebase(context: Context, smsType: String, msg: String?,type: String,phoneNumber: String?) {
+// Function to get contact name from phone number
+private fun getContactName(context: Context, phoneNumber: String): String? {
+    val uri: Uri = Uri.withAppendedPath(ContactsContract.PhoneLookup.CONTENT_FILTER_URI, Uri.encode(phoneNumber))
+    val projection = arrayOf(ContactsContract.PhoneLookup.DISPLAY_NAME)
+
+    context.contentResolver.query(uri, projection, null, null, null).use { cursor ->
+        if (cursor != null && cursor.moveToFirst()) {
+            return cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.PhoneLookup.DISPLAY_NAME))
+        }
+    }
+    return null
+}
+
+private fun insertSmsToFirebase(context: Context, smsType: String, msg: String?,type: String,phoneNumber: String?, contactName: String?) {
     val userData = getUserDataFromNative(context)
     val db = FirebaseFirestore.getInstance()
     val timestampMillis = System.currentTimeMillis()
@@ -124,6 +128,7 @@ private fun insertSmsToFirebase(context: Context, smsType: String, msg: String?,
         "userId" to (userData?.get("userId") ?: ""),
         "username" to (userData?.get("username") ?: ""),
         "phoneNumber" to (phoneNumber ?: ""),
+        "contactName" to (contactName ?: ""),
         "smsType" to smsType,
         "message" to (msg ?: "Unknown"),
         "type" to type,
@@ -155,33 +160,3 @@ private fun getUserDataFromNative(context: Context): Map<String, String>? {
     }
 }
 
-
-
-
-//import android.content.BroadcastReceiver
-//import android.content.Context
-//import android.content.Intent
-//import android.os.Bundle
-//import android.telephony.SmsMessage
-//
-//class SmsReceiver : BroadcastReceiver() {
-//    override fun onReceive(context: Context, intent: Intent) {
-//        if (intent.action == "android.provider.Telephony.SMS_RECEIVED") {
-//            val bundle: Bundle? = intent.extras
-//            if (bundle != null) {
-//                val pdus = bundle["pdus"] as Array<*>
-//                val messages = pdus.map { SmsMessage.createFromPdu(it as ByteArray) }
-//
-//                for (message in messages) {
-//                    val sender = message.originatingAddress
-//                    val content = message.messageBody
-//                    logToFirebase("SMS from $sender: $content")
-//                }
-//            }
-//        }
-//    }
-//
-//    private fun logToFirebase(message: String) {
-//        println("Tracking sms reciver message: $message")
-//    }
-//}

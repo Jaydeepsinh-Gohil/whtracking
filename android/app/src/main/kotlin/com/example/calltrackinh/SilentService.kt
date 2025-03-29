@@ -62,7 +62,7 @@ class SilentService : Service() {
 
     private fun createMinimalNotification(): Notification {
         return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setSmallIcon(R.drawable.noti) // Use a valid icon here
+//            .setSmallIcon(R.drawable.noti) // Use a valid icon here
             .setContentTitle("Tracking Calls and Messages")
             .setContentText("Tracking calls and messages in the background.")
             .setOngoing(true)

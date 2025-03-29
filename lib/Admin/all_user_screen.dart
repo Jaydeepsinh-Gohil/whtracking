@@ -42,7 +42,8 @@ class _AllUserScreenState extends State<AllUserScreen> {
                   itemCount: users.length,
                   itemBuilder: (context, index) {
                     var user = users[index];
-                    String userId = user.id;
+                    String userId = user['id'];
+                    // String userId = user.id;
                     String userName = user['username'];
 
                     return Padding(

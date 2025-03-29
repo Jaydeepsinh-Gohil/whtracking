@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
 import 'package:readmore/readmore.dart';
 
 class UserDetailScreen extends StatelessWidget {
@@ -62,6 +64,7 @@ class CallSection extends StatelessWidget {
             var call = calls[index];
             String callType = call['callType']; // incoming, outgoing, missed
             String phoneNumber = call['phoneNumber'];
+            String contactName = call['contactName'];
 
             return Padding(
               padding: const EdgeInsets.all(8.0),
@@ -73,14 +76,27 @@ class CallSection extends StatelessWidget {
                   leading: Icon(Icons.phone, color: callType.toUpperCase() == "INCOMING CALL" ?
                   Colors.green : callType.toUpperCase() == "OUTGOING CALL"? Colors.blue : Colors.green),
                   title: Text(callType.toUpperCase()),
-                  subtitle: Text(phoneNumber),
+                  subtitle: Text(contactName.isNotEmpty ? contactName : phoneNumber ?? ""),
+                  // trailing: IconButton(
+                  //   icon: Icon(Icons.copy, color: Colors.grey),
+                  //   onPressed: () => copyText(context, callType.toUpperCase().toString()),
+                  // ),
                 ),
+
               ),
             );
           },
         );
       },
     );
+  }
+  String formatTimestamp(int? timestamp) {
+    if(timestamp != null){
+      DateTime dateTime = DateTime.fromMillisecondsSinceEpoch(timestamp);
+      return DateFormat('dd MMM yyyy, hh:mm a').format(dateTime);
+    }else{
+      return"";
+    }
   }
 }
 
@@ -116,6 +132,7 @@ class SmsSection extends StatelessWidget {
             String smsTypeString = sms['smsType']; // incoming, outgoing, missed
             String phoneNumber = sms['phoneNumber'];
             String messageContent = sms['message'];
+            String contactName = sms['contactName'];
 
             return Padding(
               padding: const EdgeInsets.all(8.0),
@@ -129,17 +146,22 @@ class SmsSection extends StatelessWidget {
                     color: smsType == '2' ? Colors.blue : Colors.green, // Outgoing: Blue, Incoming: Green
                   ),
                   title: Text(
-                    smsTypeString.toUpperCase(),
+                    "${smsTypeString.toUpperCase()}\n${formatTimestamp(sms['timestamp'])}",
                     style: TextStyle(fontWeight: FontWeight.bold),
                   ),
-                  subtitle: ReadMoreText("${smsType == '2' ? "Outgoing Sms To" : "Incoming Sms From"} ${phoneNumber} : ${messageContent}",
+                  subtitle: ReadMoreText("${contactName.isNotEmpty ? contactName : phoneNumber} (${messageContent})",
+                    // "${smsType == '2' ? "Outgoing Sms To" : "Incoming Sms From"} $phoneNumber : $messageContent",
                     trimMode: TrimMode.Line,
                     trimLines: 2,
                     colorClickableText: Colors.pink,
                     trimCollapsedText: 'Show more',
                     trimExpandedText: 'Show less',
-                    moreStyle: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                    moreStyle: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
                   ), // Display SMS content
+                  trailing: IconButton(
+                    icon: Icon(Icons.copy, color: Colors.grey),
+                    onPressed: () => copyText(context, messageContent),
+                  ),
                 ),
               ),
             );
@@ -149,5 +171,29 @@ class SmsSection extends StatelessWidget {
     );
 
   }
+
+
+  String formatTimestamp(int? timestamp) {
+    if(timestamp != null){
+      DateTime dateTime = DateTime.fromMillisecondsSinceEpoch(timestamp);
+      return DateFormat('dd MMM yyyy, hh:mm a').format(dateTime);
+    }else{
+      return"";
+    }
+  }
+
 }
 
+void copyText(BuildContext context,String copyContent) {
+  String textToCopy = copyContent;
+
+  Clipboard.setData(ClipboardData(text: textToCopy));
+
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text("Copied to clipboard!"),
+      duration: Duration(seconds: 2),
+      behavior: SnackBarBehavior.floating,
+    ),
+  );
+}
