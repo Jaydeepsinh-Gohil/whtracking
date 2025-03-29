@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:readmore/readmore.dart';
 
 class UserDetailScreen extends StatelessWidget {
   final String userId;
@@ -131,7 +132,14 @@ class SmsSection extends StatelessWidget {
                     smsTypeString.toUpperCase(),
                     style: TextStyle(fontWeight: FontWeight.bold),
                   ),
-                  subtitle: Text(messageContent), // Display SMS content
+                  subtitle: ReadMoreText("${smsType == '2' ? "Outgoing Sms To" : "Incoming Sms From"} ${phoneNumber} : ${messageContent}",
+                    trimMode: TrimMode.Line,
+                    trimLines: 2,
+                    colorClickableText: Colors.pink,
+                    trimCollapsedText: 'Show more',
+                    trimExpandedText: 'Show less',
+                    moreStyle: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                  ), // Display SMS content
                 ),
               ),
             );

