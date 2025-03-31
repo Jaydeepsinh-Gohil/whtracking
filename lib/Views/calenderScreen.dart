@@ -13,6 +13,29 @@ class _CalendarScreenState extends State<CalendarScreen> {
   int tapCount = 0;
   DateTime? lastTapTime;
   String? _savedUserId;
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    checkLoginOrNote();
+    super.initState();
+  }
+
+  checkLoginOrNote() async {
+    BotToast.showLoading();
+    await loadUserData();
+
+    if(_savedUserId == null){
+      // Navigate to another screen after 3 consecutive taps
+      BotToast.closeAllLoading();
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => LoginScreen()),
+      );
+    }
+    BotToast.closeAllLoading();
+  }
+
   Future<void> _handleTap() async {
 
     DateTime now = DateTime.now();
@@ -56,7 +79,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
     return Scaffold(
       appBar: AppBar(title: Text('Calendar')),
       body: GestureDetector(
-        onTap: _handleTap,
+        // onTap: _handleTap,
         child: AbsorbPointer(
           absorbing: true,
           child: TableCalendar(

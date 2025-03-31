@@ -1,4 +1,4 @@
-package com.example.calltrackinh_admin
+package com.example.calltrackinh
 
 import android.content.BroadcastReceiver
 import android.content.Context

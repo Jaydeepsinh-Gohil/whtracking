@@ -1,4 +1,4 @@
-package com.example.calltrackinh_admin
+package com.example.calltrackinh
 
 import io.flutter.embedding.android.FlutterActivity
 import android.content.Intent

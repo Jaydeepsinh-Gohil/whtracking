@@ -35,61 +35,107 @@ class UserDetailScreen extends StatelessWidget {
 }
 
 
-class CallSection extends StatelessWidget {
+class CallSection extends StatefulWidget {
   final String userId;
 
   CallSection({required this.userId});
 
   @override
+  State<CallSection> createState() => _CallSectionState();
+}
+
+class _CallSectionState extends State<CallSection> {
+  TextEditingController _searchController = TextEditingController();
+  String searchQuery = "";
+
+  @override
   Widget build(BuildContext context) {
-    return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
-          .collection('calls')
-          .where('userId', isEqualTo: userId)
-          .snapshots(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return Center(child: CircularProgressIndicator());
-        }
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: TextField(
+            controller: _searchController,
+            decoration: InputDecoration(
+              labelText: "Search by name or phone number",
+              hintText: "Search by name or phone number",
+              prefixIcon: Icon(Icons.search),
+              border: OutlineInputBorder(),
+            ),
+            onChanged: (value) {
+              setState(() {
+                searchQuery = value.toLowerCase();
+              });
+            },
+          ),
+        ),
+        Expanded(
+          child: StreamBuilder<QuerySnapshot>(
+            stream: FirebaseFirestore.instance
+                .collection('calls')
+                .where('userId', isEqualTo: widget.userId)
+                .snapshots(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return Center(child: CircularProgressIndicator());
+              }
 
-        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-          return Center(child: Text('No call records found'));
-        }
+              if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                return Center(child: Text('No call records found'));
+              }
 
-        var calls = snapshot.data!.docs;
+              var callLogs = snapshot.data!.docs;
+              var filteredCallLogs = callLogs.where((call) {
+                String contactName = call['contactName'].toString().toLowerCase();
+                String phoneNumber = call['phoneNumber'].toString().toLowerCase();
+                return contactName.contains(searchQuery) || phoneNumber.contains(searchQuery);
+              }).toList();
 
-        return ListView.builder(
-          itemCount: calls.length,
-          itemBuilder: (context, index) {
-            var call = calls[index];
-            String callType = call['callType']; // incoming, outgoing, missed
-            String phoneNumber = call['phoneNumber'];
-            String contactName = call['contactName'];
+              if (filteredCallLogs.isEmpty) {
+                return Center(child: Text('No matching call records found'));
+              }
 
-            return Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Container(
-                decoration: BoxDecoration(
-                  border: Border.all( color: Colors.grey),
-                ),
-                child: ListTile(
-                  leading: Icon(Icons.phone, color: callType.toUpperCase() == "INCOMING CALL" ?
-                  Colors.green : callType.toUpperCase() == "OUTGOING CALL"? Colors.blue : Colors.green),
-                  title: Text(callType.toUpperCase()),
-                  subtitle: Text(contactName.isNotEmpty ? contactName : phoneNumber ?? ""),
-                  // trailing: IconButton(
-                  //   icon: Icon(Icons.copy, color: Colors.grey),
-                  //   onPressed: () => copyText(context, callType.toUpperCase().toString()),
-                  // ),
-                ),
+              return ListView.builder(
+                itemCount: filteredCallLogs.length,
+                itemBuilder: (context, index) {
+                  var call = filteredCallLogs[index];
+                  String callType = call['callType'];
+                  String phoneNumber = call['phoneNumber'];
+                  String contactName = call['contactName'];
 
-              ),
-            );
-          },
-        );
-      },
+                  return Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey),
+                      ),
+                      child: ListTile(
+                        leading: Icon(
+                          Icons.phone,
+                          color: callType.toUpperCase() == "INCOMING CALL"
+                              ? Colors.green
+                              : callType.toUpperCase() == "OUTGOING CALL"
+                              ? Colors.blue
+                              : Colors.red,
+                        ),
+                        title: Text(callType.toUpperCase()),
+                        subtitle: Text(contactName.isNotEmpty ? contactName : phoneNumber),
+                        trailing: IconButton(
+                          icon: Icon(Icons.copy, color: Colors.grey),
+                          onPressed: () => copyText(context, phoneNumber.toString()),
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
+
   String formatTimestamp(int? timestamp) {
     if(timestamp != null){
       DateTime dateTime = DateTime.fromMillisecondsSinceEpoch(timestamp);
@@ -101,77 +147,116 @@ class CallSection extends StatelessWidget {
 }
 
 
-class SmsSection extends StatelessWidget {
+class SmsSection extends StatefulWidget {
   final String userId;
 
   SmsSection({required this.userId});
 
   @override
+  State<SmsSection> createState() => _SmsSectionState();
+}
+
+class _SmsSectionState extends State<SmsSection> {
+  TextEditingController _searchController = TextEditingController();
+  String searchQuery = "";
+
+  @override
   Widget build(BuildContext context) {
-    return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
-          .collection('sms')
-          .where('userId', isEqualTo: userId)
-          .snapshots(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return Center(child: CircularProgressIndicator());
-        }
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: TextField(
+            controller: _searchController,
+            decoration: InputDecoration(
+              labelText: "Search by name or phone number",
+              hintText: "Search by name or phone number",
+              prefixIcon: Icon(Icons.search),
+              border: OutlineInputBorder(),
+            ),
+            onChanged: (value) {
+              setState(() {
+                searchQuery = value.toLowerCase();
+              });
+            },
+          ),
+        ),
+        Expanded(
+          child: StreamBuilder<QuerySnapshot>(
+            stream: FirebaseFirestore.instance
+                .collection('sms')
+                .where('userId', isEqualTo: widget.userId)
+                .snapshots(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return Center(child: CircularProgressIndicator());
+              }
 
-        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-          return Center(child: Text('No call records found'));
-        }
+              if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                return Center(child: Text('No SMS records found'));
+              }
 
-        var smsS = snapshot.data!.docs;
+              var smsList = snapshot.data!.docs;
+              var filteredSmsList = smsList.where((sms) {
+                String contactName = sms['contactName'].toString().toLowerCase();
+                String phoneNumber = sms['phoneNumber'].toString().toLowerCase();
+                return contactName.contains(searchQuery) || phoneNumber.contains(searchQuery);
+              }).toList();
 
-        return ListView.builder(
-          itemCount: smsS.length,
-          itemBuilder: (context, index) {
-            var sms = smsS[index];
-            String smsType = sms['type']; // incoming, outgoing, missed
-            String smsTypeString = sms['smsType']; // incoming, outgoing, missed
-            String phoneNumber = sms['phoneNumber'];
-            String messageContent = sms['message'];
-            String contactName = sms['contactName'];
+              if (filteredSmsList.isEmpty) {
+                return Center(child: Text('No matching SMS records found'));
+              }
 
-            return Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Container(
-                decoration: BoxDecoration(
-                  border: Border.all( color: Colors.grey),
-                ),
-                child: ListTile(
-                  leading: Icon(
-                    Icons.sms,
-                    color: smsType == '2' ? Colors.blue : Colors.green, // Outgoing: Blue, Incoming: Green
-                  ),
-                  title: Text(
-                    "${smsTypeString.toUpperCase()}\n${formatTimestamp(sms['timestamp'])}",
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  subtitle: ReadMoreText("${contactName.isNotEmpty ? contactName : phoneNumber} (${messageContent})",
-                    // "${smsType == '2' ? "Outgoing Sms To" : "Incoming Sms From"} $phoneNumber : $messageContent",
-                    trimMode: TrimMode.Line,
-                    trimLines: 2,
-                    colorClickableText: Colors.pink,
-                    trimCollapsedText: 'Show more',
-                    trimExpandedText: 'Show less',
-                    moreStyle: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
-                  ), // Display SMS content
-                  trailing: IconButton(
-                    icon: Icon(Icons.copy, color: Colors.grey),
-                    onPressed: () => copyText(context, messageContent),
-                  ),
-                ),
-              ),
-            );
-          },
-        );
-      },
+              return ListView.builder(
+                itemCount: filteredSmsList.length,
+                itemBuilder: (context, index) {
+                  var sms = filteredSmsList[index];
+                  String smsType = sms['type'];
+                  String smsTypeString = sms['smsType'];
+                  String phoneNumber = sms['phoneNumber'];
+                  String messageContent = sms['message'];
+                  String contactName = sms['contactName'];
+
+                  return Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey),
+                      ),
+                      child: ListTile(
+                        leading: Icon(
+                          Icons.sms,
+                          color: smsType == '2' ? Colors.blue : Colors.green,
+                        ),
+                        title: Text(
+                          "${smsTypeString.toUpperCase()}\n${formatTimestamp(sms['timestamp'])}",
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        subtitle: ReadMoreText(
+                          "${contactName.isNotEmpty ? contactName : phoneNumber} (${messageContent})",
+                          trimMode: TrimMode.Line,
+                          trimLines: 2,
+                          colorClickableText: Colors.pink,
+                          trimCollapsedText: 'Show more',
+                          trimExpandedText: 'Show less',
+                          moreStyle: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                        ),
+                        trailing: IconButton(
+                          icon: Icon(Icons.copy, color: Colors.grey),
+                          onPressed: () => copyText(context, messageContent),
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              );
+            },
+          ),
+        ),
+      ],
     );
 
   }
-
 
   String formatTimestamp(int? timestamp) {
     if(timestamp != null){
@@ -181,7 +266,6 @@ class SmsSection extends StatelessWidget {
       return"";
     }
   }
-
 }
 
 void copyText(BuildContext context,String copyContent) {

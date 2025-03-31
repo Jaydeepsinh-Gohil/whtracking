@@ -1,4 +1,4 @@
-package com.example.calltrackinh_admin
+package com.example.calltrackinh
 
 import android.app.Notification
 import android.app.NotificationChannel
@@ -45,6 +45,28 @@ class SilentService : Service() {
     override fun onBind(intent: Intent): IBinder? {
         return null
     }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        Log.d("SilentService", "Service destroyed")
+
+            try {
+                val serviceIntent = Intent(this, SilentService::class.java)
+                stopService(serviceIntent)
+            } catch (e: Exception) {}
+
+
+
+            try {
+                val serviceIntent = Intent(this, SilentService::class.java)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    startForegroundService(serviceIntent)
+                } else {
+                    startService(serviceIntent)
+                }
+            } catch (e: Exception) {}
+    }
+
 
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {

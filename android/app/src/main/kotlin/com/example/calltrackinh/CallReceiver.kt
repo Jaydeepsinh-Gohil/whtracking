@@ -1,4 +1,4 @@
-package com.example.calltrackinh_admin
+package com.example.calltrackinh
 
 import android.annotation.SuppressLint
 import android.content.BroadcastReceiver
@@ -23,24 +23,28 @@ class CallReceiver : BroadcastReceiver() {
         if (intent.action == TelephonyManager.ACTION_PHONE_STATE_CHANGED) {
             val state = intent.getStringExtra(TelephonyManager.EXTRA_STATE)
             val incomingNumber = intent.getStringExtra(TelephonyManager.EXTRA_INCOMING_NUMBER)
+            val sharedPreferences = context.getSharedPreferences("call_prefs", Context.MODE_PRIVATE)
 
             if (state == TelephonyManager.EXTRA_STATE_RINGING) {
                 // Incoming call is ringing
                 if (incomingNumber != null) {
                     // If incoming number is null, it's an incoming call
+                    sharedPreferences.edit().putString("last_incoming_number", incomingNumber).apply()
                     logToFirebase("Incoming call from: $incomingNumber")
                     val contactName = getContactName(context, incomingNumber) ?: incomingNumber // Get name or fallback to number
                     insertCallToFirebase(context, "Incoming call", incomingNumber,contactName.toString())
                 }
 
             } else if (state == TelephonyManager.EXTRA_STATE_OFFHOOK) {
-                if(incomingNumber != null) {
+                val lastIncomingNumber = sharedPreferences.getString("last_incoming_number", null)
+                if(lastIncomingNumber == null && incomingNumber != null) {
                     logToFirebase("Call answered: $incomingNumber")
                     val contactName = getContactName(context, incomingNumber) ?: incomingNumber // Get name or fallback to number
                     insertCallToFirebase(context, "Outgoing call", incomingNumber,contactName.toString())
                 }
             } else if (state == TelephonyManager.EXTRA_STATE_IDLE) {
                 // Call ended
+                sharedPreferences.edit().remove("last_incoming_number").apply()
                 logToFirebase("Call ended")
             }
         }

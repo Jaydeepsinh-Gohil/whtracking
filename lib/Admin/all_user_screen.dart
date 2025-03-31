@@ -1,3 +1,4 @@
+import 'package:bot_toast/bot_toast.dart';
 import 'package:calltrackinh/Admin/user_details_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -14,7 +15,31 @@ class _AllUserScreenState extends State<AllUserScreen> {
   FirebaseFirestore.instance.collection('users');
 
   Future<void> deleteUser(String userId) async {
-    await usersCollection.doc(userId).delete();
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text("Delete User Confirmation", style: TextStyle(fontWeight: FontWeight.bold)),
+          content: Text("Are you sure you want to proceed?"),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text("Cancel"),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+              onPressed: () async {
+                // Perform user deletion here
+                await usersCollection.doc(userId).delete();
+                Navigator.pop(context);
+                BotToast.showText(text: "User deleted successfully");
+              },
+              child: Text("Delete User",style: TextStyle(color: Colors.white),),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
