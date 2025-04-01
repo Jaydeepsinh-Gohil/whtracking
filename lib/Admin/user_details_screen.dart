@@ -6,8 +6,9 @@ import 'package:readmore/readmore.dart';
 
 class UserDetailScreen extends StatelessWidget {
   final String userId;
+  final String userName;
 
-  UserDetailScreen({required this.userId});
+  UserDetailScreen({required this.userId,required this.userName});
 
   @override
   Widget build(BuildContext context) {
@@ -15,7 +16,7 @@ class UserDetailScreen extends StatelessWidget {
       length: 2,
       child: Scaffold(
         appBar: AppBar(
-          title: Text('User Details'),
+          title: Text(userName ?? 'User Details'),
           bottom: TabBar(
             tabs: [
               Tab(icon: Icon(Icons.call), text: 'Call'),
@@ -74,6 +75,7 @@ class _CallSectionState extends State<CallSection> {
             stream: FirebaseFirestore.instance
                 .collection('calls')
                 .where('userId', isEqualTo: widget.userId)
+                .orderBy('timestamp', descending: true)
                 .snapshots(),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
@@ -85,6 +87,8 @@ class _CallSectionState extends State<CallSection> {
               }
 
               var callLogs = snapshot.data!.docs;
+
+              // Filtering based on search
               var filteredCallLogs = callLogs.where((call) {
                 String contactName = call['contactName'].toString().toLowerCase();
                 String phoneNumber = call['phoneNumber'].toString().toLowerCase();
@@ -95,39 +99,76 @@ class _CallSectionState extends State<CallSection> {
                 return Center(child: Text('No matching call records found'));
               }
 
-              return ListView.builder(
-                itemCount: filteredCallLogs.length,
-                itemBuilder: (context, index) {
-                  var call = filteredCallLogs[index];
-                  String callType = call['callType'];
-                  String phoneNumber = call['phoneNumber'];
-                  String contactName = call['contactName'];
+              // Grouping by Date
+              Map<String, List<QueryDocumentSnapshot>> groupedCalls = {};
+              for (var call in filteredCallLogs) {
+                DateTime callDate = DateTime.fromMillisecondsSinceEpoch(call['timestamp']);
+                String formattedDate = getFormattedDate(callDate);
 
-                  return Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.grey),
-                      ),
-                      child: ListTile(
-                        leading: Icon(
-                          Icons.phone,
-                          color: callType.toUpperCase() == "INCOMING CALL"
-                              ? Colors.green
-                              : callType.toUpperCase() == "OUTGOING CALL"
-                              ? Colors.blue
-                              : Colors.red,
-                        ),
-                        title: Text(callType.toUpperCase()),
-                        subtitle: Text(contactName.isNotEmpty ? contactName : phoneNumber),
-                        trailing: IconButton(
-                          icon: Icon(Icons.copy, color: Colors.grey),
-                          onPressed: () => copyText(context, phoneNumber.toString()),
+                if (!groupedCalls.containsKey(formattedDate)) {
+                  groupedCalls[formattedDate] = [];
+                }
+                groupedCalls[formattedDate]!.add(call);
+              }
+
+              return ListView(
+                children: groupedCalls.entries.map((entry) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+                        child: Text(
+                          entry.key,
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                         ),
                       ),
-                    ),
+                      ...entry.value.map((call) {
+                        String callType = call['callType'];
+                        String phoneNumber = call['phoneNumber'];
+                        String contactName = call['contactName'];
+
+                        return Container(
+                          // decoration: BoxDecoration(
+                          //   border: Border.all(color: Colors.grey),
+                          // ),
+                          child: ListTile(
+                            leading: callType.toUpperCase() == "INCOMING CALL"?
+                            Image.asset("assets/incoming-call.png",height: 22,):
+                            callType.toUpperCase() == "OUTGOING CALL" ?
+                            Image.asset("assets/outgoing-call.png",height: 20,) : SizedBox.shrink()
+                            ,
+                            // Icon(
+                            //   Icons.phone_callback,
+                            //   color: callType.toUpperCase() == "INCOMING CALL"
+                            //       ? Colors.green
+                            //       : callType.toUpperCase() == "OUTGOING CALL"
+                            //       ? Colors.blue
+                            //       : Colors.red,
+                            // ),
+                            title: Text(contactName.isNotEmpty ? contactName : phoneNumber,style: TextStyle(fontSize: 16),),
+                            subtitle: Text(callType.toUpperCase()),
+                            trailing: Wrap(
+                              alignment: WrapAlignment.center,
+                              spacing: 10,
+                              // mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(formatTimestamp(call['timestamp']),style: TextStyle(fontSize: 16,color: Theme.of(context).colorScheme.primary),),
+                                GestureDetector(
+                                  onTap: () => copyText(context, phoneNumber.toString()),
+                                    child: Icon(Icons.copy, color: Colors.grey)),
+                                // IconButton(
+                                //   icon: Icon(Icons.copy, color: Colors.grey),
+                                //   onPressed: () => copyText(context, phoneNumber.toString()),
+                                // ),
+                              ],
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ],
                   );
-                },
+                }).toList(),
               );
             },
           ),
@@ -136,10 +177,23 @@ class _CallSectionState extends State<CallSection> {
     );
   }
 
+  // Function to get formatted date
+  String getFormattedDate(DateTime date) {
+    DateTime today = DateTime.now();
+    DateTime yesterday = today.subtract(Duration(days: 1));
+
+    if (DateFormat('yyyy-MM-dd').format(date) == DateFormat('yyyy-MM-dd').format(today)) {
+      return "Today";
+    } else if (DateFormat('yyyy-MM-dd').format(date) == DateFormat('yyyy-MM-dd').format(yesterday)) {
+      return "Yesterday";
+    } else {
+      return DateFormat('dd MMM yyyy').format(date);
+    }
+  }
   String formatTimestamp(int? timestamp) {
     if(timestamp != null){
       DateTime dateTime = DateTime.fromMillisecondsSinceEpoch(timestamp);
-      return DateFormat('dd MMM yyyy, hh:mm a').format(dateTime);
+      return DateFormat('hh:mm a').format(dateTime);
     }else{
       return"";
     }
@@ -186,6 +240,7 @@ class _SmsSectionState extends State<SmsSection> {
             stream: FirebaseFirestore.instance
                 .collection('sms')
                 .where('userId', isEqualTo: widget.userId)
+                .orderBy('timestamp', descending: true) // Requires Firestore Index
                 .snapshots(),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
@@ -197,6 +252,8 @@ class _SmsSectionState extends State<SmsSection> {
               }
 
               var smsList = snapshot.data!.docs;
+
+              // Filter based on search query
               var filteredSmsList = smsList.where((sms) {
                 String contactName = sms['contactName'].toString().toLowerCase();
                 String phoneNumber = sms['phoneNumber'].toString().toLowerCase();
@@ -207,48 +264,82 @@ class _SmsSectionState extends State<SmsSection> {
                 return Center(child: Text('No matching SMS records found'));
               }
 
-              return ListView.builder(
-                itemCount: filteredSmsList.length,
-                itemBuilder: (context, index) {
-                  var sms = filteredSmsList[index];
-                  String smsType = sms['type'];
-                  String smsTypeString = sms['smsType'];
-                  String phoneNumber = sms['phoneNumber'];
-                  String messageContent = sms['message'];
-                  String contactName = sms['contactName'];
+              // Grouping messages by date
+              Map<String, List<QueryDocumentSnapshot>> groupedSms = {};
+              for (var sms in filteredSmsList) {
+                String formattedDate = formatTimestamp(sms['timestamp']);
 
-                  return Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.grey),
-                      ),
-                      child: ListTile(
-                        leading: Icon(
-                          Icons.sms,
-                          color: smsType == '2' ? Colors.blue : Colors.green,
-                        ),
-                        title: Text(
-                          "${smsTypeString.toUpperCase()}\n${formatTimestamp(sms['timestamp'])}",
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        subtitle: ReadMoreText(
-                          "${contactName.isNotEmpty ? contactName : phoneNumber} (${messageContent})",
-                          trimMode: TrimMode.Line,
-                          trimLines: 2,
-                          colorClickableText: Colors.pink,
-                          trimCollapsedText: 'Show more',
-                          trimExpandedText: 'Show less',
-                          moreStyle: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
-                        ),
-                        trailing: IconButton(
-                          icon: Icon(Icons.copy, color: Colors.grey),
-                          onPressed: () => copyText(context, messageContent),
+                if (!groupedSms.containsKey(formattedDate)) {
+                  groupedSms[formattedDate] = [];
+                }
+                groupedSms[formattedDate]!.add(sms);
+              }
+
+              return ListView(
+                children: groupedSms.entries.map((entry) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+                        child: Text(
+                          entry.key, // Date header (Today, Yesterday, or actual date)
+                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                         ),
                       ),
-                    ),
+                      ...entry.value.map((sms) {
+                        String smsType = sms['type'];
+                        String smsTypeString = sms['smsType'];
+                        String phoneNumber = sms['phoneNumber'];
+                        String messageContent = sms['message'];
+                        String contactName = sms['contactName'];
+
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                          child: Container(
+                            // decoration: BoxDecoration(
+                            //   border: Border.all(color: Colors.grey),
+                            //   borderRadius: BorderRadius.circular(8),
+                            // ),
+                            child: ListTile(
+                              leading: Icon(
+                                Icons.sms,
+                                color: smsType == '2' ? Colors.blue : Colors.green,
+                              ),
+                              title: Text(
+                                "${smsTypeString.toUpperCase()} SMS",
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                              subtitle: ReadMoreText(
+                                "${contactName.isNotEmpty ? contactName : phoneNumber} (${messageContent})",
+                                trimMode: TrimMode.Line,
+                                trimLines: 2,
+                                colorClickableText: Colors.pink,
+                                trimCollapsedText: 'Show more',
+                                trimExpandedText: 'Show less',
+                                moreStyle: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                              ),
+                              trailing: Wrap(
+                                alignment: WrapAlignment.center,
+                                spacing: 10,
+                                children: [
+                                  Text(showformatTimestamp(sms['timestamp']),style: TextStyle(fontSize: 16,color: Theme.of(context).colorScheme.primary),),
+                                  GestureDetector(
+                                      onTap: () => copyText(context, messageContent),
+                                      child: Icon(Icons.copy, color: Colors.grey)),
+                                  // IconButton(
+                                  //   icon: Icon(Icons.copy, color: Colors.grey),
+                                  //   onPressed: () => copyText(context, messageContent),
+                                  // ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ],
                   );
-                },
+                }).toList(),
               );
             },
           ),
@@ -258,12 +349,34 @@ class _SmsSectionState extends State<SmsSection> {
 
   }
 
-  String formatTimestamp(int? timestamp) {
+  String showformatTimestamp(int? timestamp) {
     if(timestamp != null){
       DateTime dateTime = DateTime.fromMillisecondsSinceEpoch(timestamp);
-      return DateFormat('dd MMM yyyy, hh:mm a').format(dateTime);
+      return DateFormat('hh:mm a').format(dateTime);
     }else{
       return"";
+    }
+  }
+
+  String formatTimestamp(dynamic timestamp) {
+    DateTime date;
+    if (timestamp is int) {
+      date = DateTime.fromMillisecondsSinceEpoch(timestamp);
+    } else if (timestamp is Timestamp) {
+      date = timestamp.toDate();
+    } else {
+      return "Unknown Date";
+    }
+
+    DateTime today = DateTime.now();
+    DateTime yesterday = today.subtract(Duration(days: 1));
+
+    if (DateFormat('yyyy-MM-dd').format(date) == DateFormat('yyyy-MM-dd').format(today)) {
+      return "Today";
+    } else if (DateFormat('yyyy-MM-dd').format(date) == DateFormat('yyyy-MM-dd').format(yesterday)) {
+      return "Yesterday";
+    } else {
+      return DateFormat('dd MMM yyyy').format(date);
     }
   }
 }

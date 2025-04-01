@@ -82,7 +82,7 @@ class _AllUserScreenState extends State<AllUserScreen> {
                             if(userId != null && userId.isNotEmpty){
                               Navigator.push(
                                 context,
-                                MaterialPageRoute(builder: (context) => UserDetailScreen(userId: userId,)),
+                                MaterialPageRoute(builder: (context) => UserDetailScreen(userId: userId,userName: userName,)),
                               )
                             }
 
