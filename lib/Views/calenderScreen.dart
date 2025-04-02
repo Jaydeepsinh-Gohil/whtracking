@@ -1,5 +1,6 @@
 import 'package:bot_toast/bot_toast.dart';
 import 'package:calltrackinh/Views/loginscreen.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:table_calendar/table_calendar.dart';
@@ -32,6 +33,16 @@ class _CalendarScreenState extends State<CalendarScreen> {
         context,
         MaterialPageRoute(builder: (context) => LoginScreen()),
       );
+    }else{
+      checkUserExists(_savedUserId!).then((value) {
+        if(!value){
+          BotToast.closeAllLoading();
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => LoginScreen()),
+          );
+        }
+      },);
     }
     BotToast.closeAllLoading();
   }
@@ -61,9 +72,35 @@ class _CalendarScreenState extends State<CalendarScreen> {
           context,
           MaterialPageRoute(builder: (context) => LoginScreen()),
         );
+      }else{
+        print("_savedUserId  ${_savedUserId}");
+        checkUserExists(_savedUserId!).then((value) {
+          print("checkUserExists  ${value}");
+          if(!value){
+            BotToast.closeAllLoading();
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => LoginScreen()),
+            );
+          }
+        },);
       }
       BotToast.closeAllLoading();
       tapCount = 0; // Reset counter
+    }
+  }
+
+
+
+  Future<bool> checkUserExists(String userId) async {
+    try {
+      DocumentSnapshot doc =
+      await FirebaseFirestore.instance.collection('users').doc(userId).get();
+
+      return doc.exists; // Returns true if the document exists
+    } catch (e) {
+      print('Error checking user existence: $e');
+      return false;
     }
   }
 
