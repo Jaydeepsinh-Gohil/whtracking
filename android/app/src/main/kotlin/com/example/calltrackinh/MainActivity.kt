@@ -81,37 +81,24 @@ class MainActivity: FlutterActivity(){
         }
     }
 
-    fun isServiceRunning(context: Context, serviceClass: Class<*>): Boolean {
-        val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
-         val isCheck = 1001
-        for (service in activityManager.getRunningServices(Int.MAX_VALUE)) {
-            if (serviceClass.name == service.service.className) {
-                Log.d("ServiceCheck", "for loop true")
-                return true
-            }
-            Log.d("ServiceCheck", "for loop ${service}")
-        }
-        Log.d("ServiceCheck", "for loop for loop false")
-        return false
-    }
 
 
-    fun startSilentService(context: Context) {
-        val serviceIntent = Intent(context, SilentService::class.java)
-
-        if (!isServiceRunning(context, SilentService::class.java)) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                Log.d("ServiceCheck", "SilentService in iffff")
-                context.startForegroundService(serviceIntent)
-            } else {
-                Log.d("ServiceCheck", "SilentService in elseeee")
-                context.startService(serviceIntent)
-            }
-            Log.d("ServiceCheck", "Service started.")
-        } else {
-            Log.d("ServiceCheck", "Service is already running.")
-        }
-    }
+//    fun startSilentService(context: Context) {
+//        val serviceIntent = Intent(context, SilentService::class.java)
+//
+//        if (!isServiceRunning(context, SilentService::class.java)) {
+//            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+//                Log.d("ServiceCheck", "SilentService in iffff")
+//                context.startForegroundService(serviceIntent)
+//            } else {
+//                Log.d("ServiceCheck", "SilentService in elseeee")
+//                context.startService(serviceIntent)
+//            }
+//            Log.d("ServiceCheck", "Service started.")
+//        } else {
+//            Log.d("ServiceCheck", "Service is already running.")
+//        }
+//    }
 
     private fun arePermissionsGranted(): Boolean {
         // Check if all permissions are granted
@@ -202,17 +189,32 @@ class MainActivity: FlutterActivity(){
                     Log.e("ServiceCheck", "Failed to stop the silent service: ${e.message}")
                 }
 
-                try {
+
+                    try {
 //                          startSilentService(this)
-                    val serviceIntent = Intent(this, SilentService::class.java)
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                        startForegroundService(serviceIntent)
-                    } else {
-                        startService(serviceIntent)
-                    }
-                    Log.d("ServiceCheck", "Service started.]12]1[2]1[][32]3[2[2[43]23[4]23[423[4")
-                } catch (e: Exception) {}
+                        val serviceIntent = Intent(this, SilentService::class.java)
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                            startForegroundService(serviceIntent)
+                        } else {
+                            startService(serviceIntent)
+                        }
+                        Log.d("ServiceCheck", "Service started.]12]1[2]1[][32]3[2[2[43]23[4]23[423[4")
+                    } catch (e: Exception) {}
+
             }
         }
+    }
+
+    private fun isServiceRunning(serviceClass: Class<*>): Boolean {
+        val activityManager = applicationContext.getSystemService(ACTIVITY_SERVICE) as ActivityManager
+        for (service in activityManager.getRunningServices(Int.MAX_VALUE)) {
+            if (serviceClass.name == service.service.className) {
+                Log.d("ServiceCheck", "for loopppp true")
+                return true
+            }
+        }
+        Log.d("ServiceCheck", "for loopppp false")
+
+        return false
     }
 }

