@@ -107,6 +107,7 @@ class _LoginScreenState extends State<LoginScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('${result}')),
       );
+      Navigator.pop(context);
       // exit(0);
     } on PlatformException catch (e) {
       // Handle the error

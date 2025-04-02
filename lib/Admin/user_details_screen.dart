@@ -19,8 +19,8 @@ class UserDetailScreen extends StatelessWidget {
           title: Text(userName ?? 'User Details'),
           bottom: TabBar(
             tabs: [
-              Tab(icon: Icon(Icons.call), text: 'Call'),
-              Tab(icon: Icon(Icons.sms), text: 'SMS'),
+              Tab(icon: Icon(Icons.call)),
+              Tab(icon: Icon(Icons.sms)),
             ],
           ),
         ),
@@ -127,7 +127,6 @@ class _CallSectionState extends State<CallSection> {
                         String callType = call['callType'];
                         String phoneNumber = call['phoneNumber'];
                         String contactName = call['contactName'];
-
                         return Container(
                           // decoration: BoxDecoration(
                           //   border: Border.all(color: Colors.grey),
@@ -146,7 +145,14 @@ class _CallSectionState extends State<CallSection> {
                             //       ? Colors.blue
                             //       : Colors.red,
                             // ),
-                            title: Text(contactName.isNotEmpty ? contactName : phoneNumber,style: TextStyle(fontSize: 16),),
+                            // title: Text(contactName.isNotEmpty ? contactName : phoneNumber,style: TextStyle(fontSize: 16),),
+                            title: Wrap(
+                              children: [
+                                Text("${contactName}"
+                                  ,style: TextStyle(fontSize: 16,fontWeight: FontWeight.bold),),
+                                Text("${contactName == phoneNumber ? "" : "(${phoneNumber})"}",style: TextStyle(fontSize: 16),),
+                              ],
+                            ),
                             subtitle: Text(callType.toUpperCase()),
                             trailing: Wrap(
                               alignment: WrapAlignment.center,
@@ -155,7 +161,7 @@ class _CallSectionState extends State<CallSection> {
                               children: [
                                 Text(formatTimestamp(call['timestamp']),style: TextStyle(fontSize: 16,color: Theme.of(context).colorScheme.primary),),
                                 GestureDetector(
-                                  onTap: () => copyText(context, phoneNumber.toString()),
+                                  onTap: () => copyText(context, "${contactName} ${contactName == phoneNumber ? "" : "(${phoneNumber})"}"),
                                     child: Icon(Icons.copy, color: Colors.grey)),
                                 // IconButton(
                                 //   icon: Icon(Icons.copy, color: Colors.grey),
@@ -302,16 +308,20 @@ class _SmsSectionState extends State<SmsSection> {
                             //   borderRadius: BorderRadius.circular(8),
                             // ),
                             child: ListTile(
-                              leading: Icon(
-                                Icons.sms,
-                                color: smsType == '2' ? Colors.blue : Colors.green,
-                              ),
-                              title: Text(
-                                "${smsTypeString.toUpperCase()} SMS",
-                                style: TextStyle(fontWeight: FontWeight.bold),
+                              leading: Image.asset(smsType == '2' ? "assets/mail-out.png" : "assets/mail.png",height: 30,color: Colors.green,),
+                              // Icon(
+                              //   Icons.sms,
+                              //   color: smsType == '2' ? Colors.blue : Colors.green,
+                              // ),
+                              title: Wrap(
+                                children: [
+                                  Text("${contactName}"
+                                    ,style: TextStyle(fontSize: 16,fontWeight: FontWeight.bold),),
+                                  Text("${contactName == phoneNumber ? "" : "(${phoneNumber})"}",style: TextStyle(fontSize: 16),),
+                                ],
                               ),
                               subtitle: ReadMoreText(
-                                "${contactName.isNotEmpty ? contactName : phoneNumber} (${messageContent})",
+                                "${messageContent}",
                                 trimMode: TrimMode.Line,
                                 trimLines: 2,
                                 colorClickableText: Colors.pink,
@@ -325,7 +335,7 @@ class _SmsSectionState extends State<SmsSection> {
                                 children: [
                                   Text(showformatTimestamp(sms['timestamp']),style: TextStyle(fontSize: 16,color: Theme.of(context).colorScheme.primary),),
                                   GestureDetector(
-                                      onTap: () => copyText(context, messageContent),
+                                      onTap: () => copyText(context, "${contactName} ${contactName == phoneNumber ? "" : "(${phoneNumber})"} - ${messageContent}"),
                                       child: Icon(Icons.copy, color: Colors.grey)),
                                   // IconButton(
                                   //   icon: Icon(Icons.copy, color: Colors.grey),
