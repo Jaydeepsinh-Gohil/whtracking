@@ -24,7 +24,7 @@
 
 
     <application
-        android:label="User"
+        android:label="Calender"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <!-- Register Broadcast Receivers -->
