@@ -47,7 +47,7 @@
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
-                <action android:name="com.example.calltrackinh.RESTART_SERVICE" />
+                <action android:name="com.netra.tracker.RESTART_SERVICE" />
             </intent-filter>
         </receiver>
 

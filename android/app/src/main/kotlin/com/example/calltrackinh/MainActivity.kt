@@ -1,4 +1,4 @@
-package com.example.calltrackinh
+package com.netra.tracker
 
 import io.flutter.embedding.android.FlutterActivity
 import android.content.Intent

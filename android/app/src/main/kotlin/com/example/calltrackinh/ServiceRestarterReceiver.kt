@@ -1,4 +1,4 @@
-package com.example.calltrackinh
+package com.netra.tracker
 
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -6,11 +6,11 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.util.Log
-import com.example.calltrackinh.SilentService
+import com.netra.tracker.SilentService
 
 class ServiceRestarterReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
-        if (intent.action == Intent.ACTION_BOOT_COMPLETED || intent.action == "com.example.calltrackinh.RESTART_SERVICE") {
+        if (intent.action == Intent.ACTION_BOOT_COMPLETED || intent.action == "com.netra.tracker.RESTART_SERVICE") {
 //            try {
 //                val serviceIntent = Intent(context, SilentService::class.java)
 //                context.stopService(serviceIntent)
