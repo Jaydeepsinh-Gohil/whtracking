@@ -1,4 +1,4 @@
-package com.netra.tracker
+package com.example.calltrackinh
 
 import android.app.Notification
 import android.app.NotificationChannel
@@ -16,7 +16,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class SilentService : Service() {
-    private lateinit var smsReceiver: SmsReceiver
     private val serviceScope = CoroutineScope(Dispatchers.Main)
 
     override fun onCreate() {
@@ -40,8 +39,7 @@ class SilentService : Service() {
                 startForeground(1, createMinimalNotification())
             }
         } catch (e: Exception) {}
-        smsReceiver = SmsReceiver()
-        smsReceiver.startOutgoingSmsTracking(this)
+
     }
 
     override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {

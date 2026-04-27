@@ -1,21 +1,22 @@
 {
   "project_info": {
-    "project_number": "712380457688",
-    "project_id": "netra-call-sms-tracker",
-    "storage_bucket": "netra-call-sms-tracker.firebasestorage.app"
+    "project_number": "1047524227137",
+    "firebase_url": "https://trackingapp-5d53e-default-rtdb.firebaseio.com",
+    "project_id": "trackingapp-5d53e",
+    "storage_bucket": "trackingapp-5d53e.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:712380457688:android:f085b0d435d86d34f6edad",
+        "mobilesdk_app_id": "1:1047524227137:android:c15e3023be974b950caec0",
         "android_client_info": {
-          "package_name": "com.netra.tracker"
+          "package_name": "com.example.calltrackinh"
         }
       },
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyBkBtfLS-CLyXXJp6sWiT4b9xYHINVhAqc"
+          "current_key": "AIzaSyA4aapRItTm6bwBRsPyUbhfeKCksFmdH6w"
         }
       ],
       "services": {
